@@ -41,7 +41,7 @@ const emailReminderTemplate = ({
   const dateTimeFormat = `ddd, MMM D, YYYY ${currentTimeFormat}`;
 
   let eventDate = "";
-  let locationString = `${guessEventLocationType(location)?.label || location} ${meetingUrl}`;
+  let locationString = "";
 
   if (isEditingMode) {
     endTime = "{EVENT_END_TIME}";
@@ -55,6 +55,12 @@ const emailReminderTemplate = ({
     eventDate = dayjs(startTime).tz(timeZone).locale(locale).format(dateTimeFormat);
 
     endTime = dayjs(endTime).tz(timeZone).locale(locale).format(currentTimeFormat);
+
+    const resolvedLocation = guessEventLocationType(location)?.label || location;
+    locationString = [resolvedLocation, meetingUrl]
+      .map((value) => (typeof value === "string" ? value.trim() : ""))
+      .filter(Boolean)
+      .join(" ");
   }
 
   const emailSubject = `${t("reminder")}: ${eventName} - ${eventDate}`;
@@ -75,9 +81,9 @@ const emailReminderTemplate = ({
     "attendees"
   )}: </strong></div>${t("you_and_conjunction")} ${otherPerson}<br><br>`;
 
-  const locationHtml = `<div><strong class="editor-text-bold">${t(
-    "location"
-  )}: </strong></div>${locationString}<br><br>`;
+  const locationHtml = locationString
+    ? `<div><strong class="editor-text-bold">${t("location")}: </strong></div>${locationString}<br><br>`
+    : "";
 
   const branding =
     !isBrandingDisabled && !isEditingMode ? `<br><br>_<br><br>${t("scheduling_by")} ${APP_NAME}` : "";
