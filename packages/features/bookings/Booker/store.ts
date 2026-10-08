@@ -4,9 +4,12 @@ import dayjs from "@calcom/dayjs";
 import { BOOKER_NUMBER_OF_DAYS_TO_LOAD } from "@calcom/lib/constants";
 import { BookerLayouts } from "@calcom/prisma/zod-utils";
 import { useEffect } from "react";
+import type { StoreApi } from "zustand";
+import type { UseBoundStoreWithEqualityFn } from "zustand/traditional";
 import { createWithEqualityFn } from "zustand/traditional";
 import type { GetBookingType } from "../lib/get-booking";
 import type { BookerLayout, BookerState } from "./types";
+import { normalizeBookerQueryParams } from "./utils/normalizeBookerQueryParams";
 import { getQueryParam, removeQueryParam, updateQueryParam } from "./utils/query-param";
 
 const _iso_3166_1_alpha_2_codes = [
@@ -438,7 +441,28 @@ export type BookerStore = {
 /**
  * Creates a new booker store instance
  */
-export const createBookerStore = () =>
+const getInitialQueryParams = (): { month: string; date: string | null } => {
+  const queryParams = normalizeBookerQueryParams({
+    month: getQueryParam("month"),
+    date: getQueryParam("date"),
+  });
+
+  if (getQueryParam("month") !== queryParams.month) {
+    updateQueryParam("month", queryParams.month);
+  }
+  if (getQueryParam("date") !== queryParams.date) {
+    if (queryParams.date) {
+      updateQueryParam("date", queryParams.date);
+    } else {
+      removeQueryParam("date");
+    }
+  }
+  return queryParams;
+};
+
+export const createBookerStore = (
+  queryParams: { month: string; date: string | null } = getInitialQueryParams()
+): UseBoundStoreWithEqualityFn<StoreApi<BookerStore>> =>
   createWithEqualityFn<BookerStore>((set, get) => ({
     state: "loading",
     setState: (state: BookerState) => set({ state }),
@@ -454,7 +478,7 @@ export const createBookerStore = () =>
       }
       return set({ layout });
     },
-    selectedDate: getQueryParam("date") || null,
+    selectedDate: queryParams.date,
     setSelectedDate: ({ date: selectedDate, omitUpdatingParams = false, preventMonthSwitching = false }) => {
       // unset selected date
       if (!selectedDate) {
@@ -517,12 +541,7 @@ export const createBookerStore = () =>
     setVerificationCode: (code: string | null) => {
       set({ verificationCode: code });
     },
-    month:
-      getQueryParam("month") ||
-      (getQueryParam("date") && dayjs(getQueryParam("date")).isValid()
-        ? dayjs(getQueryParam("date")).format("YYYY-MM")
-        : null) ||
-      dayjs().format("YYYY-MM"),
+    month: queryParams.month,
     setMonth: (month: string | null) => {
       if (!month) {
         removeQueryParam("month");
