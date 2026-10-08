@@ -61,29 +61,32 @@ export async function getLocationGroupedOptions(
     });
   }
 
-  const credentialRepository = new PrismaCredentialRepository(prisma);  
-  const nonDelegationCredentials = await credentialRepository.findNonDelegationCredentialsByAppCategories({  
-    idToSearchObject,
-    appCategories: defaultVideoAppCategories,  
-  });
+  const credentialRepository = new PrismaCredentialRepository(prisma);
+  const credentials = user
+    ? await credentialRepository.findCredentialsByAppCategories({
+        idToSearchObject,
+        appCategories: defaultVideoAppCategories,
+      })
+    : await credentialRepository.findNonDelegationCredentialsByAppCategories({
+        idToSearchObject,
+        appCategories: defaultVideoAppCategories,
+      });
 
-  let credentials;
+  let allCredentials;
   if (user) {
     // We only add delegationCredentials if the request for location options is for a user because DelegationCredential Credential is applicable to Users only.
-    const { credentials: allCredentials } = await enrichUserWithDelegationConferencingCredentialsWithoutOrgId(
-      {
-        user: {
-          ...user,
-          credentials: nonDelegationCredentials,
-        },
-      }
-    );
-    credentials = allCredentials;
+    const result = await enrichUserWithDelegationConferencingCredentialsWithoutOrgId({
+      user: {
+        ...user,
+        credentials,
+      },
+    });
+    allCredentials = result.credentials;
   } else {
-    credentials = nonDelegationCredentials;  
+    allCredentials = credentials;
   }
 
-  const integrations = await getEnabledAppsFromCredentials(credentials, { filterOnCredentials: true });
+  const integrations = await getEnabledAppsFromCredentials(allCredentials, { filterOnCredentials: true });
 
   integrations.forEach((app) => {
     // All apps that are labeled as a locationOption are video apps.
