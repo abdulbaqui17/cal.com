@@ -25,10 +25,17 @@ export const normalizeBookerQueryParams = ({
 }): BookerQueryParams => {
   const validDate = parseStrict(date, DATE_FORMAT);
   const validMonth = parseStrict(month, MONTH_FORMAT);
+  const today = dayjs();
+  let nonPastDate = validDate;
+  let nonPastMonth = validMonth;
+  if (nonPastDate?.isBefore(today, "day")) nonPastDate = null;
+  if (nonPastMonth?.isBefore(today, "month")) nonPastMonth = null;
 
   return {
-    date: validDate?.format(DATE_FORMAT) ?? null,
+    date: nonPastDate?.format(DATE_FORMAT) ?? null,
     month:
-      validMonth?.format(MONTH_FORMAT) ?? validDate?.format(MONTH_FORMAT) ?? dayjs().format(MONTH_FORMAT),
+      nonPastMonth?.format(MONTH_FORMAT) ??
+      nonPastDate?.format(MONTH_FORMAT) ??
+      today.format(MONTH_FORMAT),
   };
 };

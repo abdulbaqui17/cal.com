@@ -442,22 +442,10 @@ export type BookerStore = {
  * Creates a new booker store instance
  */
 const getInitialQueryParams = (): { month: string; date: string | null } => {
-  const queryParams = normalizeBookerQueryParams({
+  return normalizeBookerQueryParams({
     month: getQueryParam("month"),
     date: getQueryParam("date"),
   });
-
-  if (getQueryParam("month") !== queryParams.month) {
-    updateQueryParam("month", queryParams.month);
-  }
-  if (getQueryParam("date") !== queryParams.date) {
-    if (queryParams.date) {
-      updateQueryParam("date", queryParams.date);
-    } else {
-      removeQueryParam("date");
-    }
-  }
-  return queryParams;
 };
 
 export const createBookerStore = (
@@ -643,6 +631,24 @@ export const createBookerStore = (
         allowUpdatingUrlParams,
         defaultPhoneCountry,
       });
+
+      if (!isPlatform || allowUpdatingUrlParams) {
+        const normalizedQueryParams = normalizeBookerQueryParams({
+          month: getQueryParam("month"),
+          date: getQueryParam("date"),
+        });
+
+        if (getQueryParam("month") !== normalizedQueryParams.month) {
+          updateQueryParam("month", normalizedQueryParams.month);
+        }
+        if (getQueryParam("date") !== normalizedQueryParams.date) {
+          if (normalizedQueryParams.date) {
+            updateQueryParam("date", normalizedQueryParams.date);
+          } else {
+            removeQueryParam("date");
+          }
+        }
+      }
 
       if (durationConfig?.includes(Number(getQueryParam("duration")))) {
         set({

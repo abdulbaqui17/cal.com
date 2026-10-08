@@ -28,4 +28,15 @@ describe("normalizeBookerQueryParams", () => {
       date: `${currentMonth}-08`,
     });
   });
+
+  it("falls back from past query values", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-08T00:00:00Z"));
+
+    expect(normalizeBookerQueryParams({ month: "2026-09", date: "2026-10-07" })).toEqual({
+      month: "2026-10",
+      date: null,
+    });
+    vi.useRealTimers();
+  });
 });
