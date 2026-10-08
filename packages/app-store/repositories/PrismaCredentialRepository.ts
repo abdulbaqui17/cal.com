@@ -12,7 +12,7 @@ type FindCredentialsArgs = {
 export class PrismaCredentialRepository {
   constructor(private readonly prismaClient: typeof prisma) {}
 
-  private async findCredentialsByAppCategories({ idToSearchObject, appCategories }: FindCredentialsArgs) {
+  private async queryCredentialsByAppCategories({ idToSearchObject, appCategories }: FindCredentialsArgs) {
     return await this.prismaClient.credential.findMany({
       where: {
         ...idToSearchObject,
@@ -34,11 +34,11 @@ export class PrismaCredentialRepository {
   }
 
   async findCredentialsByAppCategories(args: FindCredentialsArgs) {
-    return await this.findCredentialsByAppCategories(args);
+    return await this.queryCredentialsByAppCategories(args);
   }
 
   async findNonDelegationCredentialsByAppCategories(args: FindCredentialsArgs) {
-    const credentials = await this.findCredentialsByAppCategories(args);
+    const credentials = await this.queryCredentialsByAppCategories(args);
     return buildNonDelegationCredentials(credentials);
   }
 }
