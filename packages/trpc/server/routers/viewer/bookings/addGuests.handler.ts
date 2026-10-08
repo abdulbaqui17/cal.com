@@ -163,6 +163,27 @@ function deduplicateGuestEmails(guests: string[]): string[] {
   });
 }
 
+export function buildGuestMap(
+  guests: Array<{
+    email: string;
+    name?: string;
+    timeZone?: string;
+    phoneNumber?: string;
+    language?: string;
+  }>
+) {
+  const emailToGuestMap = new Map<string, (typeof guests)[number]>();
+
+  for (const guest of guests) {
+    const baseEmail = extractBaseEmail(guest.email).toLowerCase();
+    if (!emailToGuestMap.has(baseEmail)) {
+      emailToGuestMap.set(baseEmail, guest);
+    }
+  }
+
+  return emailToGuestMap;
+}
+
 function getBlacklistedEmails(): string[] {
   return process.env.BLACKLISTED_GUEST_EMAILS
     ? process.env.BLACKLISTED_GUEST_EMAILS.split(",").map((email) => email.toLowerCase())
@@ -208,10 +229,8 @@ export async function sanitizeAndFilterGuests(
   const guestEmailsLowerCase = deduplicatedGuests.map((email) => extractBaseEmail(email).toLowerCase());
   const emailToRequiresVerification = await getEmailVerificationRequirements(guestEmailsLowerCase);
 
-  // Create a map of email to guest object for easy lookup
-  const emailToGuestMap = new Map(
-    guests.map((guest) => [extractBaseEmail(guest.email).toLowerCase(), guest])
-  );
+  // Keep the same first-occurrence winner as deduplicateGuestEmails.
+  const emailToGuestMap = buildGuestMap(guests);
 
   const uniqueGuestEmails = deduplicatedGuests.filter((email) => {
     const baseGuestEmail = extractBaseEmail(email).toLowerCase();
